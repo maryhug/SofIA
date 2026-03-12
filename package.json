@@ -6,10 +6,7 @@
   "scripts": {
     "start":        "node index.js",
     "dev":          "node --watch index.js",
-    "estado":       "node scripts/6-ver-estado.js",
-    "limpiar":      "node scripts/resetear-bd.js",
-    "limpiar:total":"node scripts/resetear-bd.js --total",
-    "llamada":      "node scripts/5-llamada-real.js",
+    "test:chatbot": "node scripts/test-chatbot.js",
     "tunnel":       "C:\\ngrok\\ngrok.exe http 3000"
   },
   "dependencies": {

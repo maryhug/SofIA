@@ -23,9 +23,9 @@
 'use strict';
 
 const pool                     = require('../../db/pool');
-const { insertPersonalizadaItem } = require('../../db/cola');
 const { colombiaDateString }   = require('../../utils/dateHelpers');
 const logger                   = require('../../utils/logger');
+const { processCandidateCallFail } = require('../../../chatbot/chatbot.service');
 
 /** resultados that permanently close the queue row */
 const FINAL_RESULTADOS = new Set(['AGENDADO', 'COMPLETADO', 'NUM_INVALIDO', 'DESCARTADO']);
@@ -88,6 +88,82 @@ function parseHoraCallback(raw) {
 }
 
 /**
+ * Try to infer callback hour from free text.
+ * Examples: "llamame a las 15:00", "llamame a las 3 de la tarde", "a las 9 PM".
+ *
+ * @param {string|null} nota
+ * @returns {string|null}
+ */
+function parseHoraCallbackFromNota(nota) {
+  if (!nota || typeof nota !== 'string') return null;
+  const text = nota.trim();
+
+  const hasPmHint = /\b(tarde|noche)\b/i.test(text);
+  const hasAmHint = /\b(manana|mañana)\b/i.test(text);
+
+  const withMinutes = text.match(/\b(\d{1,2}):(\d{2})(?:\s*(AM|PM))?\b/i);
+  if (withMinutes) {
+    let h = parseInt(withMinutes[1], 10);
+    const m = parseInt(withMinutes[2], 10);
+    const ap = withMinutes[3] ? withMinutes[3].toUpperCase() : (hasPmHint ? 'PM' : (hasAmHint ? 'AM' : null));
+
+    if (ap === 'PM' && h < 12) h += 12;
+    if (ap === 'AM' && h === 12) h = 0;
+
+    if (h >= 0 && h < 24 && m >= 0 && m < 60) {
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+  }
+
+  const hourOnly = text.match(/\ba\s+las\s+(\d{1,2})(?:\s*(AM|PM))?/i)
+    || text.match(/\b(\d{1,2})\s*(AM|PM)\b/i)
+    || text.match(/\b(\d{1,2})\s*(?:de la)?\s*(manana|mañana|tarde|noche)\b/i);
+
+  if (hourOnly) {
+    let h = parseInt(hourOnly[1], 10);
+    const token = (hourOnly[2] || '').toUpperCase();
+    const ap = token === 'AM' || token === 'PM'
+      ? token
+      : (hasPmHint ? 'PM' : (hasAmHint ? 'AM' : null));
+
+    if (ap === 'PM' && h < 12) h += 12;
+    if (ap === 'AM' && h === 12) h = 0;
+
+    if (h >= 0 && h < 24) return `${String(h).padStart(2, '0')}:00`;
+  }
+
+  return null;
+}
+
+/**
+ * Accepts slight payload variations from senders.
+ *
+ * @param {object} payload
+ * @returns {object}
+ */
+function normalizePayload(payload) {
+  return {
+    candidatoId: payload?.candidato_id || payload?.candidatoId || payload?.id || null,
+    conversationId: payload?.conversation_id || payload?.conversationId || null,
+    resultado: payload?.resultado || payload?.result || null,
+    dia: payload?.dia || null,
+    hora: payload?.hora || null,
+    eventoIdRaw: payload?.evento_id ?? payload?.eventoId ?? null,
+    nota: payload?.nota || payload?.note || payload?.resumen || null,
+    horaCallbackRaw: payload?.hora_callback || payload?.horaCallback || null,
+    duracionRaw: payload?.duracion_segundos ?? payload?.duracionSegundos ?? null,
+  };
+}
+
+function isCallbackHourAllowed(hhmm) {
+  if (!hhmm) return false;
+  const [hRaw, mRaw] = hhmm.split(':');
+  const h = Number(hRaw);
+  const m = Number(mRaw);
+  return Number.isInteger(h) && Number.isInteger(m) && h >= 6 && h < 22 && m >= 0 && m < 60;
+}
+
+/**
  * Process an ElevenLabs webhook result.
  * All DB writes run inside a single transaction.
  *
@@ -96,12 +172,14 @@ function parseHoraCallback(raw) {
  */
 async function processWebhookResult(payload) {
   // ── 1. Normalise payload ──────────────────────────────────────────────────
-  const candidatoId = payload.candidato_id;
+  const normalized = normalizePayload(payload);
+  const candidatoId = normalized.candidatoId;
+  const conversationId = normalized.conversationId;
 
   // ElevenLabs may send "PENDIENTE" when the candidate was reached but no
   // slot was available.  This code does not exist in resultados_llamada, so
   // we map it to OCUPADO (same re-queue behaviour) before any DB look-up.
-  let resultadoCodigo = (payload.resultado || '').toUpperCase();
+  let resultadoCodigo = String(normalized.resultado || '').toUpperCase();
   if (resultadoCodigo === 'PENDIENTE') {
     logger.info(
       { event: 'resultado_normalizado', original: 'PENDIENTE', normalizado: 'OCUPADO', candidato_id: candidatoId },
@@ -110,20 +188,22 @@ async function processWebhookResult(payload) {
     resultadoCodigo = 'OCUPADO';
   }
 
-  const diaAgendado     = payload.dia              || null;
-  const horaAgendado    = payload.hora             || null;
-  const eventoId        = payload.evento_id ? Number(payload.evento_id) : null;
-  const nota            = payload.nota             || null;
-  const horaCallbackRaw = payload.hora_callback    || null;
-  const duracion        = payload.duracion_segundos ? Number(payload.duracion_segundos) : null;
+  const diaAgendado     = normalized.dia;
+  const horaAgendado    = normalized.hora;
+  const eventoId        = normalized.eventoIdRaw !== null ? Number(normalized.eventoIdRaw) : null;
+  const nota            = normalized.nota;
+  const horaCallbackRaw = normalized.horaCallbackRaw;
+  const duracion        = normalized.duracionRaw !== null ? Number(normalized.duracionRaw) : null;
 
-  // Parse hora_callback into HH:MM 24h format
-  const horaCallback = parseHoraCallback(horaCallbackRaw);
+  // Parse hora_callback into HH:MM 24h format. If missing, infer from note.
+  const horaCandidate = parseHoraCallback(horaCallbackRaw) || parseHoraCallbackFromNota(nota);
+  const horaCallback = isCallbackHourAllowed(horaCandidate) ? horaCandidate : null;
 
   logger.info(
     {
       event:        'webhook_received',
       candidato_id: candidatoId,
+      conversation_id: conversationId,
       resultado:    resultadoCodigo,
       evento_id:    eventoId,
       hora_callback: horaCallback,
@@ -131,8 +211,8 @@ async function processWebhookResult(payload) {
     'Processing ElevenLabs webhook result',
   );
 
-  if (!candidatoId || !resultadoCodigo) {
-    throw new Error('Missing required fields: candidato_id and resultado');
+  if ((!candidatoId && !conversationId) || !resultadoCodigo) {
+    throw new Error('Missing required fields: (candidato_id or conversation_id) and resultado');
   }
 
   // ── 2. Resolve lookup IDs (read-only, before transaction) ─────────────────
@@ -165,31 +245,46 @@ async function processWebhookResult(payload) {
     await client.query('BEGIN');
 
     // ── 4. Update llamadas ────────────────────────────────────────────────
-    // Find the EN_CURSO llamada for this candidate; fall back to most recent today.
-    const { rows: llamadaRows } = await client.query(
-      `SELECT id FROM public.llamadas
-       WHERE candidato_id = $1
-         AND resultado_id = $2
-       ORDER BY fecha_hora_llamada DESC
-       LIMIT 1`,
-      [candidatoId, enCursoId],
-    );
+    let llamadaRows = [];
+    if (conversationId) {
+      const byConversation = await client.query(
+        `SELECT id, candidato_id FROM public.llamadas
+         WHERE conversation_id = $1
+         ORDER BY fecha_hora_llamada DESC
+         LIMIT 1`,
+        [conversationId],
+      );
+      llamadaRows = byConversation.rows;
+    }
+
+    if (!llamadaRows.length && candidatoId) {
+      const byCandidate = await client.query(
+        `SELECT id, candidato_id FROM public.llamadas
+         WHERE candidato_id = $1
+           AND resultado_id = $2
+         ORDER BY fecha_hora_llamada DESC
+         LIMIT 1`,
+        [candidatoId, enCursoId],
+      );
+      llamadaRows = byCandidate.rows;
+    }
 
     let llamadaId = llamadaRows[0]?.id || null;
+    const resolvedCandidatoId = llamadaRows[0]?.candidato_id || candidatoId;
 
-    if (!llamadaId) {
+    if (!llamadaId && resolvedCandidatoId) {
       const { rows: fallback } = await client.query(
         `SELECT id FROM public.llamadas
          WHERE candidato_id = $1
            AND fecha_hora_llamada::date = CURRENT_DATE
          ORDER BY fecha_hora_llamada DESC
          LIMIT 1`,
-        [candidatoId],
+        [resolvedCandidatoId],
       );
       llamadaId = fallback[0]?.id || null;
       if (llamadaId) {
         logger.warn(
-          { event: 'llamada_fallback', candidato_id: candidatoId, llamada_id: String(llamadaId) },
+          { event: 'llamada_fallback', candidato_id: resolvedCandidatoId, llamada_id: String(llamadaId) },
           'No EN_CURSO llamada found – using most recent llamada of today',
         );
       }
@@ -211,7 +306,7 @@ async function processWebhookResult(payload) {
       logger.info({ event: 'llamada_updated', llamada_id: String(llamadaId) }, 'Llamada updated');
     } else {
       logger.warn(
-        { event: 'llamada_not_found', candidato_id: candidatoId },
+        { event: 'llamada_not_found', candidato_id: resolvedCandidatoId, conversation_id: conversationId },
         'No llamada found for this candidate today – skipping llamadas update',
       );
     }
@@ -223,96 +318,50 @@ async function processWebhookResult(payload) {
     // - Save nota_horario when candidate gave a callback preference
     const incrementFranja = !NO_INCREMENT_FRANJA.has(resultadoCodigo);
 
-    await client.query(
-      `UPDATE public.candidatos
-       SET ultimo_contacto       = NOW(),
-           evento_asignado_id    = $1,
-           estado_gestion_id     = $2,
-           intentos_llamada      = intentos_llamada + 1,
-           intentos_franja_actual = CASE
-             WHEN $3 THEN intentos_franja_actual + 1
-             ELSE         0
-           END,
-           nota_horario          = CASE WHEN $4::text IS NOT NULL THEN $4 ELSE nota_horario END,
-           updated_at            = NOW()
-       WHERE id = $5`,
-      [eventoId, estadoGestionId, incrementFranja, nota, candidatoId],
-    );
-    details.candidato_updated = true;
+    if (resolvedCandidatoId) {
+      await client.query(
+        `UPDATE public.candidatos c
+         SET ultimo_contacto        = NOW(),
+             evento_asignado_id     = $1,
+             estado_gestion_id      = $2,
+             intentos_llamada       = c.intentos_llamada + 1,
+             intentos_franja_actual = CASE
+               WHEN $3 THEN c.intentos_franja_actual + 1
+               ELSE         0
+             END,
+             franja_actual          = CASE
+               WHEN (SELECT h.codigo FROM public.horarios h WHERE h.id = c.horario_id) = 'PM' THEN 'tarde'
+               WHEN (SELECT h.codigo FROM public.horarios h WHERE h.id = c.horario_id) = 'AM' THEN 'manana'
+               ELSE c.franja_actual
+             END,
+             nota_horario           = CASE WHEN $4::text IS NOT NULL THEN $4 ELSE c.nota_horario END,
+             updated_at             = NOW()
+         WHERE c.id = $5`,
+        [eventoId, estadoGestionId, incrementFranja, nota, resolvedCandidatoId],
+      );
+    }
+    details.candidato_updated = Boolean(resolvedCandidatoId);
     logger.info(
-      { event: 'candidato_updated', candidato_id: candidatoId, estado: estadoGestionCodigo, intentos_incrementados: incrementFranja },
+      { event: 'candidato_updated', candidato_id: resolvedCandidatoId, estado: estadoGestionCodigo, intentos_incrementados: incrementFranja },
       'Candidato updated',
     );
 
-    // ── 6. Update evento if AGENDADO ──────────────────────────────────────
-    if (resultadoCodigo === 'AGENDADO' && eventoId) {
-      const { rows: evUpdated } = await client.query(
-        `UPDATE public.eventos
-         SET inscritos_actuales = inscritos_actuales + 1,
-             estado = CASE
-               WHEN inscritos_actuales + 1 >= capacidad_total THEN 'COMPLETO'
-               ELSE estado
-             END,
-             updated_at = NOW()
-         WHERE id = $1
-           AND estado != 'COMPLETO'
-         RETURNING inscritos_actuales, estado`,
-        [eventoId],
-      );
-      if (evUpdated.length) {
-        details.evento_updated = { evento_id: eventoId, ...evUpdated[0] };
-        logger.info({ event: 'evento_updated', evento_id: eventoId, ...evUpdated[0] }, 'Evento updated');
-      }
-    }
-
-    // ── 7. Update cola_llamadas ───────────────────────────────────────────
-    const today           = colombiaDateString();
-    const nuevoEstadoCola = FINAL_RESULTADOS.has(resultadoCodigo) ? 'COMPLETADA' : 'CANCELADA';
-
-    await client.query(
-      `UPDATE public.cola_llamadas
-       SET estado = $1
-       WHERE candidato_id    = $2
-         AND fecha_programada = $3
-         AND estado IN ('PENDIENTE', 'EN_CURSO')`,
-      [nuevoEstadoCola, candidatoId, today],
-    );
-    details.queue_estado = nuevoEstadoCola;
-    logger.info({ event: 'cola_updated', nuevo_estado: nuevoEstadoCola }, `Cola → ${nuevoEstadoCola}`);
-
     await client.query('COMMIT');
-
-    // ── 8. Schedule PERSONALIZADA callback (outside transaction — not critical) ─
-    // If the candidate asked to be called back at a specific time,
-    // insert a high-priority PERSONALIZADA queue item for today.
-    if (horaCallback && !FINAL_RESULTADOS.has(resultadoCodigo)) {
-      try {
-        const inserted = await insertPersonalizadaItem({
-          candidatoId:     candidatoId,
-          prioridad:       100, // user-requested → highest priority
-          horaProgramada:  horaCallback,
-          fechaProgramada: today,
-        });
-        if (inserted) {
-          details.personalizada_scheduled = { hora: horaCallback };
-          logger.info(
-            { event: 'personalizada_scheduled', candidato_id: candidatoId, hora: horaCallback },
-            `Personalizada callback scheduled at ${horaCallback}`,
-          );
-        }
-      } catch (err) {
-        // Non-fatal: log and continue
-        logger.error(
-          { event: 'personalizada_insert_error', candidato_id: candidatoId, err: err.message },
-          'Could not insert personalizada queue item',
-        );
-      }
-    }
 
     logger.info(
       { event: 'webhook_processed', candidato_id: candidatoId, resultado: resultadoCodigo },
       'Webhook processed successfully',
     );
+
+    // ── 9. Chatbot Trigger (Despertar a SofIA Chat) ───────────────────────
+    // Si la llamada no fue contestada, verificamos si cumplimos la regla de 9 llamadas
+    if (resultadoCodigo === 'NO_CONTESTA' && candidatoId) {
+       // Ejecutar en background (no await para no bloquear respuesta webhook)
+       processCandidateCallFail(candidatoId).catch(err => {
+         logger.error({ event: 'chatbot_trigger_error', err: err.message }, 'Error triggering chatbot');
+       });
+    }
+
     return { success: true, details };
 
   } catch (err) {

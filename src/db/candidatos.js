@@ -11,9 +11,10 @@ const pool = require('./pool');
  * Eligibility rules:
  *   1. estado_gestion IN ('PENDIENTE', 'NO_CONTESTA')
  *   2. evento_asignado_id IS NULL  – not already scheduled
- *   3. No ACTIVE queue row today (PENDIENTE/EN_CURSO) in ANY franja
+ *   3. Preference must match the requested franja (AM/PM/AMPM)
+ *   4. No ACTIVE queue row today (PENDIENTE/EN_CURSO) in ANY franja
  *      → prevents calling someone who is currently being processed
- *   4. No queue row today for THIS specific franja (any estado)
+ *   5. No queue row today for THIS specific franja (any estado)
  *      → prevents duplicate manana/tarde/noche entries on the same day
  *
  * @param {string} franja – 'manana' | 'tarde' | 'noche'
@@ -48,14 +49,21 @@ async function getCandidatesForQueue(franja) {
       eg.codigo IN ('PENDIENTE', 'NO_CONTESTA')
       -- Rule 2: not already scheduled
       AND c.evento_asignado_id IS NULL
-      -- Rule 3: no active queue row today (any franja)
+      -- Rule 3: candidate preference must match this franja
+      AND (
+        h.codigo IS NULL
+        OR h.codigo = 'AMPM'
+        OR (h.codigo = 'AM' AND $1 = 'manana')
+        OR (h.codigo = 'PM' AND $1 IN ('tarde', 'noche'))
+      )
+      -- Rule 4: no active queue row today (any franja)
       AND NOT EXISTS (
         SELECT 1 FROM public.cola_llamadas cl
         WHERE cl.candidato_id    = c.id
           AND cl.fecha_programada = CURRENT_DATE
           AND cl.estado IN ('PENDIENTE', 'EN_CURSO')
       )
-      -- Rule 4: not already in THIS franja today (avoids duplicate manana/tarde/noche)
+      -- Rule 5: not already in THIS franja today (avoids duplicate manana/tarde/noche)
       AND NOT EXISTS (
         SELECT 1 FROM public.cola_llamadas cl
         WHERE cl.candidato_id    = c.id
@@ -114,6 +122,8 @@ async function getCandidatoById(id) {
  * @param {number|null} [fields.eventoAsignadoId]
  * @param {number}  [fields.estadoGestionId]
  * @param {string}  [fields.faseActual]        – optional phase change
+ * @param {'manana'|'tarde'|'noche'} [fields.franjaActual]
+ * @param {boolean} [fields.resetIntentosFranja]
  * @returns {Promise<void>}
  */
 async function updateCandidato(candidatoId, fields) {
@@ -136,6 +146,13 @@ async function updateCandidato(candidatoId, fields) {
   if (fields.faseActual !== undefined) {
     sets.push(`fase_actual = $${idx++}`);
     values.push(fields.faseActual);
+  }
+  if (fields.franjaActual !== undefined) {
+    sets.push(`franja_actual = $${idx++}`);
+    values.push(fields.franjaActual);
+  }
+  if (fields.resetIntentosFranja === true) {
+    sets.push('intentos_franja_actual = 0');
   }
 
   if (sets.length === 0) return;

@@ -70,6 +70,9 @@ CRON_FILL_NOCHE=0 19 * * *
 
 # ── Servidor HTTP ─────────────────────────────────────────────────────────
 PORT=3000
+
+# ── Chatbot Integration ───────────────────────────────────────────────────
+CHATBOT_WEBHOOK_URL=http://localhost:8000/solicitar-chat
 ```
 
 ### Variables que envía el sistema al agente de ElevenLabs
@@ -93,300 +96,122 @@ El agente necesita estas variables dinámicas en cada llamada:
 
 ### `npm start`
 Arranca el servidor en **producción**.
-
-- Levanta el servidor HTTP en el puerto configurado (por defecto 3000)
-- Registra los 3 cron jobs diarios para llenar la cola (mañana / tarde / noche)
-- Inicia el worker que procesa la cola cada `QUEUE_INTERVAL_MS` milisegundos
-- **Úsalo cuando todo funcione y quieras correrlo en serio**
-
-```powershell
-npm start
-```
-
----
+- Levanta el servidor HTTP.
+- Inicia los Cron Jobs y el Worker de llamadas.
+- Escucha webhooks de ElevenLabs y del Chatbot.
 
 ### `npm run dev`
-Igual que `npm start` pero con **hot-reload** automático (`node --watch`).
-
-- Si modificas cualquier archivo `.js`, Node reinicia solo
-- **Úsalo mientras desarrollas o ajustas el código**
-
-```powershell
-npm run dev
-```
-
----
-
-### `npm run tunnel`
-Abre un túnel **ngrok** apuntando al puerto 3000.
-
-- Genera una URL pública como `https://xxxx.ngrok-free.app`
-- Esa URL es la que debes configurar en ElevenLabs como webhook
-- **Requiere que el servidor esté corriendo en otra terminal**
-
-```powershell
-npm run tunnel
-```
-
-> ⚠️ Cada vez que reinicias ngrok la URL cambia. Recuerda actualizarla en el dashboard de ElevenLabs.
-
----
-
-### `npm run test:db`
-**Prueba 1** — Verifica la conexión a Supabase y lee todas las tablas clave.
-
-Comprueba:
-- Ping a la base de datos (`SELECT 1`)
-- Lectura de tablas de lookup: `estados_gestion`, `resultados_llamada`, `horarios`
-- Conteos de: `candidatos`, `candidato_ideal`, `eventos`, `cola_llamadas`, `llamadas`
-
-```powershell
-npm run test:db
-```
-
-> **Cuándo usarlo:** Antes de cualquier otra cosa. Si esto falla, revisa `DATABASE_URL` en tu `.env`.
-
----
-
-### `npm run test:fill`
-**Prueba 2** — Llena `cola_llamadas` para la franja **mañana** y muestra el resultado.
-
-Comprueba:
-- Cálculo de prioridades usando `candidato_ideal.ci_total`
-- Filtro de candidatos ya procesados hoy
-- Inserción de filas en `cola_llamadas` con `estado = 'PENDIENTE'`
-- Lista de candidatos encolados ordenados por prioridad
-
-```powershell
-npm run test:fill
-```
-
-> **Cuándo usarlo:** Para verificar que la lógica de llenado de cola funciona antes de hacer llamadas.
-
----
-
-### `npm run test:worker`
-**Prueba 3** — Ejecuta **una sola iteración** del worker en **modo mock** (sin llamadas reales).
-
-Comprueba:
-- Conteo de llamadas activas (`EN_CURSO`)
-- Lectura de la cola `PENDIENTE` de hoy
-- Validación de ventana horaria (06:00–22:00 hora Colombia)
-- Marca la fila de cola como `ENCURSO`
-- Crea un registro en `llamadas` con `resultado = EN_CURSO`
-- Muestra las llamadas creadas con su `conversation_id`
-
-```powershell
-npm run test:worker
-```
-
-> 🟡 Este script fuerza `ELEVENLABS_MOCK=true` internamente, sin importar lo que diga tu `.env`.  
-> **Cuándo usarlo:** Para validar el worker completo sin gastar créditos de ElevenLabs.
-
----
-
-### `npm run test:webhook`
-**Prueba 4** — Envía un webhook simulado (`AGENDADO`) al servidor HTTP local.
-
-Comprueba:
-- El endpoint `POST /webhook/elevenlabs-resultado` recibe el payload
-- Actualiza `llamadas` (resultado, día agendado, hora agendada, evento)
-- Actualiza `candidatos` (estado_gestion → AGENDADO, ultimo_contacto, evento_asignado_id)
-- Actualiza `eventos` (incrementa `inscritos_actuales`)
-- Actualiza `cola_llamadas` → estado `COMPLETADA`
-
-```powershell
-# Terminal 1: servidor corriendo
-npm run dev
-
-# Terminal 2: enviar el webhook simulado
-npm run test:webhook
-```
-
-> ⚠️ **El servidor DEBE estar corriendo** antes de ejecutar este comando.
-
----
-
-### `npm run llamada`
-**Script 5** — Dispara una **llamada real** a ElevenLabs para el primer candidato `PENDIENTE`.
-
-- No necesita que el servidor esté corriendo (es standalone)
-- Conecta directamente a la API de ElevenLabs
-- Muestra el `llamada_id` y `conversation_id` al terminar
-- Acepta `--telefono=+57XXXXXXXXXX` para llamar a un número específico
-
-```powershell
-# Llamar al primer candidato PENDIENTE
-npm run llamada
-
-# Llamar a un teléfono específico
-node scripts/5-llamada-real.js --telefono=+573001234567
-```
-
-> ⚠️ Requiere `ELEVENLABS_MOCK=false` en tu `.env`. Si está en `true`, el script aborta con error.  
-> **Cuándo usarlo:** Para verificar que ElevenLabs llama realmente al teléfono y el agente habla.
-
----
+Igual que `start`, pero **reinicia automáticamente** si detecta cambios en el código. Ideal para desarrollo.
 
 ### `npm run estado`
-**Script 6** — Muestra el estado actual de todas las tablas en un solo vistazo.
+Muestra un reporte rápido en consola del estado actual de la cola de llamadas (Pendientes, En Curso, Completadas).
 
-Muestra:
-- 📞 Llamadas de hoy (resultado, hora, `conversation_id`)
-- ⏳ Cola de llamadas de hoy (estado, prioridad, franja)
-- 👤 Candidatos (estado_gestion, fase, intentos, evento asignado)
-- 🟢 Eventos (inscritos / capacidad, estado DISPONIBLE / COMPLETO)
-- 📊 Resumen rápido con totales
-
-```powershell
-npm run estado
-```
-
-> **Cuándo usarlo:** Antes y después de cualquier prueba para ver exactamente qué cambió.
-
----
+### `npm run test:chatbot -- <UUID>`
+Prueba manual del disparador del Chatbot. Envía los datos del candidato a la URL configurada en `.env` sin esperar a las 9 llamadas fallidas.
+*Ejemplo:* `npm run test:chatbot -- 0dd9d7da-525f-44ad-997a-8e52103b765b`
 
 ### `npm run limpiar`
-**Script 7** — Marca **todas** las llamadas `EN_CURSO` como `NO_CONTESTA`.
+Resetea la tabla `cola_llamadas` (borra todo lo pendiente). Útil para empezar de cero un día de pruebas.
 
-Útil cuando:
-- Hiciste pruebas mock y los slots quedaron bloqueados en `EN_CURSO`
-- Una llamada real no recibió webhook y sigue activa
-- El worker dejó de procesar porque ya se alcanzó `MAX_CONCURRENT_CALLS`
-
-```powershell
-# Limpiar solo llamadas con más de 30 minutos (por defecto)
-node scripts/7-limpiar-llamadas.js
-
-# Limpiar TODAS sin importar el tiempo
-npm run limpiar
-```
+### `npm run limpiar:total`
+⚠ **PELIGRO:** Borra TODAS las llamadas históricas y reinicia los contadores de los candidatos. Deja la BD como nueva.
 
 ---
 
-### `npm run test:all`
-Ejecuta las pruebas 1, 2 y 3 en secuencia (conexión → llenar cola → worker mock).
+## 🤖 Integración con Chatbot
 
-```powershell
-npm run test:all
-```
+Esta funcionalidad permite contactar por WhatsApp (u otro medio) a los candidatos que **no contestan las llamadas**.
 
----
+### ¿Cómo funciona?
 
-## 🚀 Flujo recomendado
+1.  **Regla de Negocio:**
+    El sistema cuenta cuántas veces ha sido llamado un candidato HOY y ha dado `NO_CONTESTA`.
+    
+2.  **Disparador (Trigger):**
+    Cuando el contador llega a **9 llamadas fallidas** (3 mañana, 3 tarde, 3 noche), SofIA "despierta" y envía los datos del candidato a una API externa (tu bot en ngrok/n8n).
 
-### PASO 1 — Primera configuración (solo una vez)
+3.  **Envío de Datos:**
+    Se hace un `POST` a la URL definida en `CHATBOT_WEBHOOK_URL` (en tu archivo `.env`).
+    
+    **Ejemplo del JSON enviado:**
+    ```json
+    {
+      "telefono": "3001234567",         // Sin el '+'
+      "nombre": "Carlos Perez",
+      "motivo": "ENTREVISTA",
+      "ciudad": "Medellín",
+      "lista_horarios": "1) lunes 3:00 PM\n2) martes 7:00 PM",
+      "eventos_disponibles": [
+        { "fecha_legible": "lunes a las 3:00 PM", "evento_id": 1 },
+        { "fecha_legible": "martes a las 7:00 PM", "evento_id": 2 }
+      ]
+    }
+    ```
 
-```
-1.  npm install                ← instalar dependencias
-2.  Crear y llenar .env        ← credenciales de Supabase y ElevenLabs
-3.  npm run test:db            ← ¿conecta a Supabase? ¿lee todas las tablas?
-```
-
----
-
-### PASO 2 — Probar el llenado de cola
-
-```
-4.  npm run test:fill          ← ¿inserta candidatos en cola_llamadas?
-5.  npm run estado             ← verificar que aparecen en la cola de hoy
-```
-
----
-
-### PASO 3 — Probar el worker en modo mock (sin llamadas reales)
-
-```
-# Asegúrate de tener ELEVENLABS_MOCK=true en .env
-
-6.  npm run test:worker        ← ¿procesa la cola y crea registros EN_CURSO?
-7.  npm run estado             ← verificar llamadas creadas
-```
+4.  **Respuesta del Chatbot (Opcional):**
+    Si tu bot logra contactar al usuario, puede reportar el resultado de vuelta a SofIA enviando un `POST` a:
+    `http://tu-servidor-sofia/api/chatbot/webhook`
 
 ---
 
-### PASO 4 — Probar el webhook completo (sin llamadas reales)
+## 🕵️‍♂️ ¿Cómo ver el JSON que llega a mi compañera?
 
-```
-# Terminal 1
-8.  npm run dev                ← servidor corriendo
+Si tu compañera está recibiendo los datos mediante **ngrok**, la forma más fácil de ver qué le llegó es usar la interfaz de inspección de ngrok.
 
-# Terminal 2
-9.  npm run test:worker        ← crear registro EN_CURSO en llamadas
-10. npm run test:webhook       ← simular que ElevenLabs responde AGENDADO
-11. npm run estado             ← verificar que llamadas, candidatos y eventos se actualizaron
-```
+1.  **En la máquina de ella** (donde corre ngrok), abre el navegador y entra a:
+    👉 **http://localhost:4040**
 
----
+2.  Ahí verá una lista de todas las peticiones que le han llegado.
+3.  Busca la última petición `POST` y haz clic en ella.
+4.  A la derecha verá el **Header** y el **Body** (el JSON completo que SofIA le envió).
 
-### PASO 5 — Probar llamadas reales con ngrok
-
-```
-# 1. Cambiar en .env:
-#    ELEVENLABS_MOCK=false
-
-# Terminal 1
-12. npm run dev                ← servidor HTTP corriendo
-
-# Terminal 2
-13. npm run tunnel
-    → Copia la URL pública: https://xxxx.ngrok-free.app
-
-# En ElevenLabs (dashboard del agente):
-    → Webhook URL: https://xxxx.ngrok-free.app/webhook/elevenlabs-resultado
-
-# Terminal 1 o 3 (cuando quieras hacer la llamada):
-14. npm run estado             ← ver estado ANTES de la llamada
-15. npm run llamada            ← el teléfono sonará en segundos
-    → El agente de ElevenLabs hablará con el candidato
-
-# Al terminar la llamada (ElevenLabs envía el webhook automáticamente):
-16. npm run estado             ← verificar resultado final en todas las tablas
-```
+*Si ella usa n8n o un servidor en la nube, debe revisar el historial de ejecuciones de su webhook.*
 
 ---
 
-### PASO 6 — Producción
+## 🚀 Flujo Correcto para Pruebas
 
-```
-# 1. ELEVENLABS_MOCK=false en .env
-# 2. Webhook configurado con URL pública permanente (Railway, Render, VPS, etc.)
-# 3. npm start
-#    → Servidor HTTP en el puerto configurado
-#    → Cron jobs registrados: 7am, 2pm, 7pm (hora Colombia)
-#    → Worker procesando cola cada QUEUE_INTERVAL_MS ms (default 10s)
-```
+Si quieres probar todo el ciclo sin esperar llamadas reales:
+
+1.  **Configura tu entorno:**
+    Asegúrate de tener `.env` con las credenciales y la URL del chatbot (`CHATBOT_WEBHOOK_URL`).
+
+2.  **Inicia SofIA:**
+    ```powershell
+    npm start
+    ```
+
+3.  **Dispara el Chatbot manualmente:**
+    En otra terminal, elige un candidato (copia su ID de la base de datos) y ejecuta:
+    ```powershell
+    npm run test:chatbot -- <PEGAR_UUID_AQUI>
+    ```
+
+4.  **Verifica el envío:**
+    - En la terminal de SofIA verás: `[ChatbotService] Enviando datos...`
+    - En el navegador de tu compañera (`http://localhost:4040`) debería aparecer la petición recibida.
 
 ---
 
-## 📡 Endpoints HTTP
+## 🌐 Endpoints HTTP Disponibles
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/health` | Health check del servidor |
-| `POST` | `/webhook/elevenlabs-resultado` | Recibe el resultado de una llamada desde ElevenLabs |
+### `POST /webhook`
+Recibe los resultados de las llamadas de **ElevenLabs**. Actualiza el estado de la llamada y ageda al candidato si es necesario.
 
-### Payload esperado por el webhook
-
+### `POST /api/chatbot/webhook`
+Recibe actualizaciones del **Chatbot externo**.
+*Body esperado:*
 ```json
 {
-  "candidato_id":  "uuid-del-candidato",
-  "resultado":     "AGENDADO",
-  "dia":           "martes",
-  "hora":          "10:00 AM",
-  "evento_id":     5,
-  "nota":          "El candidato confirmó asistencia sin problemas"
+  "candidato_id": "uuid...",
+  "estado_gestion": "CONTACTADO",
+  "nota": "El usuario prefiere mañana"
 }
 ```
 
-### Valores válidos para `resultado`
-
-| Valor | Efecto en `candidatos.estado_gestion` | Efecto en eventos |
-|-------|---------------------------------------|-------------------|
-| `AGENDADO` | → AGENDADO | Incrementa `inscritos_actuales` |
-| `NO_CONTESTA` | → NO_CONTESTA | Sin cambios |
-| `RECHAZADO` | → DESCARTADO | Sin cambios |
-| `REPROGRAMAR` | → PENDIENTE | Sin cambios |
+### `POST /api/chatbot/trigger-manual`
+Endpoint de utilidad para forzar el envío de datos al chatbot sin cumplir la regla de 9 llamadas.
+*Body:* `{ "candidato_id": "uuid..." }`
 
 ---
 
@@ -488,4 +313,3 @@ SofIA/
                    ├──► UPDATE eventos   (inscritos_actuales; si lleno → estado = 'COMPLETO')
                    └──► UPDATE cola_llamadas → COMPLETADA / CANCELADA
 ```
-

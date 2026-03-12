@@ -6,6 +6,7 @@
 const express        = require('express');
 const healthRoutes   = require('./routes/health');
 const webhookRoutes  = require('./routes/webhook');
+const chatbotRoutes = require('../chatbot/chatbot.routes');
 const logger         = require('./utils/logger');
 
 const app = express();
@@ -22,6 +23,20 @@ app.use((req, _res, next) => {
 // ── Routes ───────────────────────────────────────────────────────────────────
 app.use('/health', healthRoutes);
 app.use('/webhook', webhookRoutes);
+app.use('/api/chatbot', chatbotRoutes);
+
+// Endpoint temporal solicitado para pruebas directas de envío al webhook
+app.post('/solicitar-chat', async (req, res) => {
+  try {
+    const chatbotService = require('../chatbot/chatbot.service');
+    console.log('[App] Recibida solicitud manual en /solicitar-chat para enviar a compañera:', req.body);
+    const result = await chatbotService.sendToChatbot(req.body);
+    res.json({ success: true, remote_response: result });
+  } catch (err) {
+    console.error('[App] Error en /solicitar-chat:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ── 404 handler ──────────────────────────────────────────────────────────────
 app.use((_req, res) => {
@@ -36,4 +51,3 @@ app.use((err, _req, res, _next) => {
 });
 
 module.exports = app;
-

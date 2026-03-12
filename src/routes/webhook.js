@@ -30,14 +30,18 @@ router.post('/elevenlabs-resultado', async (req, res) => {
   try {
     const payload = req.body;
 
-    // Basic validation
-    if (!payload || !payload.candidato_id || !payload.resultado) {
+    // Basic validation: accept candidate id OR conversation id.
+    const hasCandidate = Boolean(payload?.candidato_id || payload?.candidatoId || payload?.id);
+    const hasConversation = Boolean(payload?.conversation_id || payload?.conversationId);
+    const hasResultado = Boolean(payload?.resultado || payload?.result);
+
+    if (!payload || (!hasCandidate && !hasConversation) || !hasResultado) {
       logger.warn(
         { event: 'webhook_invalid_payload', body: payload },
         'Webhook received invalid payload',
       );
       return res.status(400).json({
-        error: 'Missing required fields: candidato_id and resultado',
+        error: 'Missing required fields: (candidato_id or conversation_id) and resultado',
       });
     }
 
