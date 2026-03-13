@@ -8,6 +8,8 @@ const healthRoutes   = require('./routes/health');
 const webhookRoutes  = require('./routes/webhook');
 const chatbotRoutes = require('../chatbot/chatbot.routes');
 const logger         = require('./utils/logger');
+const path = require('path');
+const adminRoutes = require('./routes/admin.routes'); // <-- Importa la ruta
 
 const app = express();
 
@@ -24,6 +26,9 @@ app.use((req, _res, next) => {
 app.use('/health', healthRoutes);
 app.use('/webhook', webhookRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+app.use(express.static(path.join(__dirname, '../public')));
+app.use('/api/admin', adminRoutes);
+
 
 // Endpoint temporal solicitado para pruebas directas de envío al webhook
 app.post('/solicitar-chat', async (req, res) => {
