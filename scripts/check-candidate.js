@@ -1,4 +1,5 @@
 // scripts/check-candidate.js
+
 require('dotenv').config();
 const pool = require('../src/db/pool');
 

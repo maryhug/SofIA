@@ -66,6 +66,12 @@
             </a>
 
             <p class="nav-section mt-4">PRUEBAS Y DIAGNÓSTICO</p>
+
+            <a href="#" class="nav-item" onclick="showView('view-invite-jurado', this)">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Invitar Jurados
+            </a>
+
             <a href="#" class="nav-item" onclick="showView('view-test-direct', this)">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
                 Forzar Chatbot Directo
@@ -211,6 +217,34 @@
             </div>
 
             <!-- ================== PRUEBAS (TESTING) ================== -->
+
+            <!-- NUEVA VISTA: Invitar Jurados -->
+            <div id="view-invite-jurado" class="info-card">
+                <div class="card-header"><div class="icon-box bg-slate-light"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--slate-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><h3>Invitar Jurado a Presentación</h3></div></div>
+                <ul class="script-details">
+                    <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Propósito:</strong> Demostración para el Proyecto Integrador.</li>
+                    <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Qué hace:</strong> Fuerza la invitación al Evento seleccionado para un candidato.</li>
+                    <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg> Por qué usarlo:</strong> Para contactar rápidamente a los jurados sin depender de las llamadas previas.</li>
+                </ul>
+                <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                    <!-- Fila 1: Candidato -->
+                    <div class="flex-row">
+                        <button class="btn btn-outline" style="flex: 0 0 auto;" onclick="loadUsers()">1. Cargar Usuarios</button>
+                        <select id="select-invite-jurado" class="form-control"><option value="">2. Selecciona un jurado...</option></select>
+                    </div>
+
+                    <!-- Fila 2: Evento y Botón de Enviar -->
+                    <div class="flex-row">
+                        <select id="select-evento-jurado" class="form-control" style="background-color: var(--slate-light);">
+                            <option value="">3. Selecciona el Evento...</option>
+                            <option value="5" selected>ID 5 - Presentación (16 Mar - 15:00)</option>
+                            <option value="1">ID 1 - Entrevista Técnica (Prueba)</option>
+                        </select>
+                        <button class="btn btn-primary" style="flex: 0 0 auto;" onclick="enviarInvitacionDoble()">4. Enviar Invitación</button>
+                    </div>
+                </div>
+            </div>
+
             <div id="view-test-direct" class="info-card">
                 <div class="card-header"><div class="icon-box bg-slate-light"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--slate-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></div><div><h3>Forzar Chatbot Directo</h3></div></div>
                 <ul class="script-details">

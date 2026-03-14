@@ -13,6 +13,12 @@ const PORT = process.env.PORT || 3000;
 async function main() {
   await new Promise((resolve) => {
     app.listen(PORT, () => {
+      // Muestra el enlace clickable
+      const url = `http://localhost:${PORT}`;
+      console.log('\n\n' + '='.repeat(50));
+      console.log(`🚀 Servidor corriendo en: ${url}`);
+      console.log('='.repeat(50) + '\n');
+
       logger.info({ event: 'server_started', port: PORT }, `HTTP server listening on :${PORT}`);
       resolve();
     });

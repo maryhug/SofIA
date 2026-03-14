@@ -1,74 +1,46 @@
 // scripts/diagnostico-red.js
-const axios = require('axios');
-const https = require('https');
+/**
+ * Script de diagnóstico simple para verificar conectividad
+ * Recuperado para compatibilidad con botones de IDE
+ */
+'use strict';
+require('dotenv').config();
+const dns = require('dns');
+const pool = require('../src/db/pool');
 
-// ⚠️ Asegúrate de pedirle a tu compañera la URL de Ngrok ACTUALIZADA
-const URL = 'https://rae-compensable-unmunificently.ngrok-free.dev/solicitar-chat';
+console.log('\n--- 📡 DIAGNÓSTICO RÁPIDO SOFIA ---');
 
-const payload = {
-  candidato_id: "00000000-0000-0000-0000-000000000000",
-  telefono: "573112790495",
-  nombre: "Usuario de Prueba",
-  motivo: "PRUEBA_LOGICA",
-  ciudad: "Medellín",
-  lista_horarios: "1) Lunes 8:00 AM\n2) Martes 9:00 AM",
-  eventos_disponibles: [
-    { fecha_legible: "Lunes a las 8:00 AM", evento_id: 1 },
-    { fecha_legible: "Martes a las 9:00 AM", evento_id: 2 }
-  ],
-  mensaje: "Hola, esto es un mensaje de diagnóstico de red desde SofIA."
-};
-
-
-async function testConnection() {
-  console.log(`📡 Probando conexión a: ${URL}`);
-
-  const agent = new https.Agent({
-    rejectUnauthorized: false
-  });
-
-  try {
-    const res = await axios.post(URL, payload, {
-      httpsAgent: agent,
-      timeout: 5000, // Máximo espera 5 segundos
-      headers: {
-        'ngrok-skip-browser-warning': 'true',
-        'User-Agent': 'SofIA-Diagnostico/1.0',
-        'Content-Type': 'application/json'
-      }
-    });
-    console.log('✅ Éxito! El servidor de tu compañera respondió.');
-    console.log('Status HTTP:', res.status);
-    console.log('Respuesta:', res.data);
-
-    // Forzamos el cierre exitoso
-    process.exit(0);
-
-  } catch (err) {
-    if (err.code === 'ECONNABORTED') {
-      console.error('\n❌ TIMEOUT ERROR ❌');
-      console.error('El servidor de tu compañera no respondió después de 5 segundos.');
-      console.error('Posibles causas:');
-      console.error('1. Su Ngrok está apagado.');
-      console.error('2. Su URL cambió y necesitas actualizar el script.');
-      console.error('3. Su servidor de Node.js (bot) está caído.');
+// 1. Verificar Internet (Resolución DNS)
+dns.lookup('google.com', (err) => {
+    if (err) {
+        console.error('❌ Internet: SIN CONEXIÓN O FALLA DNS');
+    } else {
+        console.log('✅ Internet: OPERATIVO');
     }
-    else if (err.code === 'ENOTFOUND') {
-      console.error('\n❌ ERROR DNS ❌');
-      console.error('La URL de Ngrok no existe. Revisa que esté bien escrita.');
-    }
-    else if (err.response) {
-      console.error(`\n❌ ERROR DEL SERVIDOR REMOTO (Status ${err.response.status}) ❌`);
-      console.error(err.response.data);
-    }
-    else {
-      console.error('\n❌ ERROR DESCONOCIDO ❌');
-      console.error(err.message);
-    }
+});
 
-    // Forzamos el cierre con error para destrabar el panel
-    process.exit(1);
-  }
-}
+// 2. Verificar Variables de Entorno Clave
+const checks = [
+    { name: 'DATABASE_URL', val: process.env.DATABASE_URL },
+    { name: 'CHATBOT_WEBHOOK_URL', val: process.env.CHATBOT_WEBHOOK_URL }
+];
 
-testConnection();
+checks.forEach(c => {
+    if (c.val) console.log(`✅ ENV ${c.name}: OK`);
+    else console.warn(`⚠️ ENV ${c.name}: FALTA O VACÍO`);
+});
+
+// 3. Verificar Conexión a Base de Datos
+(async () => {
+    try {
+        const res = await pool.query('SELECT current_database(), current_user, version()');
+        const dbInfo = res.rows[0];
+        console.log(`✅ Base de Datos: CONECTADA a '${dbInfo.current_database}' como '${dbInfo.current_user}'`);
+    } catch (err) {
+        console.error(`❌ Base de Datos: ERROR - ${err.message}`);
+    } finally {
+        await pool.end();
+        console.log('-----------------------------------\n');
+    }
+})();
+

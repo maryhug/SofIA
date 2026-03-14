@@ -17,7 +17,8 @@ const ALLOWED_SCRIPTS = [
     'test-webhook-respuesta.js',
     'get-candidatos.js',
     'check-candidate.js',
-    'reset-candidato.js'
+    'reset-candidato.js',
+    'invitar-jurado.js' // <-- Agregado para permitir invitaciones desde el panel web
 ];
 
 // Endpoint para ejecutar scripts

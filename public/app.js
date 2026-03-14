@@ -44,11 +44,12 @@ async function startNgrok() {
 
 // Cargar la lista de usuarios (Guarda los usuarios en TODOS los selects de la app)
 async function loadUsers() {
-    // AHORA TENEMOS 3 SELECTORES EN LA APP
+    // AHORA TENEMOS 4 SELECTORES EN LA APP
     const selects = [
         document.getElementById('select-payload'),
         document.getElementById('select-test-direct'),
-        document.getElementById('select-reset-cand') // <-- El nuevo para Preparar Candidato
+        document.getElementById('select-reset-cand'),
+        document.getElementById('select-invite-jurado') // <-- Agregado para el nuevo panel
     ];
 
     selects.forEach(sel => { if(sel) sel.innerHTML = '<option value="">⏳ Buscando en BD...</option>'; });
@@ -77,8 +78,7 @@ async function loadUsers() {
     finally { loader.style.display = 'none'; }
 }
 
-
-// Validar selección de una vista específica antes de ejecutar
+// Validar selección de una vista específica antes de ejecutar (Un solo ID)
 function runScriptWithSelect(scriptName, selectId) {
     const uuid = document.getElementById(selectId).value;
     if (!uuid) {
@@ -86,6 +86,27 @@ function runScriptWithSelect(scriptName, selectId) {
         return;
     }
     runScript(scriptName, uuid);
+}
+
+// NUEVA FUNCIÓN: Validar y enviar dos IDs (Candidato + Evento)
+function enviarInvitacionDoble() {
+    const candidatoUuid = document.getElementById('select-invite-jurado').value;
+    const eventoId = document.getElementById('select-evento-jurado').value;
+
+    if (!candidatoUuid) {
+        alert('⚠️ ¡Atención!\nDebes cargar y seleccionar a un Jurado primero.');
+        return;
+    }
+    if (!eventoId) {
+        alert('⚠️ ¡Atención!\nDebes seleccionar un Evento.');
+        return;
+    }
+
+    // Unimos los dos IDs con un espacio, así llegarán como process.argv[2] y process.argv[3]
+    const argumentos = `${candidatoUuid} ${eventoId}`;
+
+    // Llamamos al motor principal con el script y los argumentos
+    runScript('invitar-jurado.js', argumentos);
 }
 
 // Motor principal
