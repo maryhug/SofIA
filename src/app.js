@@ -1,58 +1,28 @@
-/**
- * src/app.js – Express application factory
- */
 'use strict';
 
-const express        = require('express');
-const healthRoutes   = require('./routes/health');
-const webhookRoutes  = require('./routes/webhook');
+const express = require('express');
 const chatbotRoutes = require('../chatbot/chatbot.routes');
-const logger         = require('./utils/logger');
+const adminRoutes = require('./routes/admin.routes');
 const path = require('path');
-const adminRoutes = require('./routes/admin.routes'); // <-- Importa la ruta
 
 const app = express();
 
-// ── Middleware ───────────────────────────────────────────────────────────────
 app.use(express.json());
 
-// Request logger
+// Logger de peticiones (Opcional, pero útil)
 app.use((req, _res, next) => {
-  logger.info({ event: 'http_request', method: req.method, url: req.originalUrl });
+  console.log(`[${req.method}] ${req.originalUrl}`);
   next();
 });
 
-// ── Routes ───────────────────────────────────────────────────────────────────
-app.use('/health', healthRoutes);
-app.use('/webhook', webhookRoutes);
-app.use('/api/chatbot', chatbotRoutes);
-app.use(express.static(path.join(__dirname, '../public')));
-app.use('/api/admin', adminRoutes);
+// ── Rutas ────────────────────────────────────
+app.use('/api/chatbot', chatbotRoutes); // Ruta principal del Bot
+app.use('/api/admin', adminRoutes);     // Panel de Control
+app.use(express.static(path.join(__dirname, '../public'))); // Frontend
 
-
-// Endpoint temporal solicitado para pruebas directas de envío al webhook
-app.post('/solicitar-chat', async (req, res) => {
-  try {
-    const chatbotService = require('../chatbot/chatbot.service');
-    console.log('[App] Recibida solicitud manual en /solicitar-chat para enviar a compañera:', req.body);
-    const result = await chatbotService.sendToChatbot(req.body);
-    res.json({ success: true, remote_response: result });
-  } catch (err) {
-    console.error('[App] Error en /solicitar-chat:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ── 404 handler ──────────────────────────────────────────────────────────────
+// Handler 404
 app.use((_req, res) => {
-  res.status(404).json({ error: 'Not found' });
-});
-
-// ── Global error handler ─────────────────────────────────────────────────────
-// eslint-disable-next-line no-unused-vars
-app.use((err, _req, res, _next) => {
-  logger.error({ event: 'unhandled_express_error', err: err.message });
-  res.status(500).json({ error: 'Internal server error' });
+  res.status(404).json({ error: 'Ruta no encontrada' });
 });
 
 module.exports = app;
