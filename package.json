@@ -6,10 +6,24 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
-    "test:chatbot": "node scripts/test-chatbot.js",
-    "test:chatbot:direct": "node scripts/test-chatbot-directo.js",
-    "test:wa": "node scripts/prueba-wa-directa.js",
-    "tunnel": "C:\\ngrok\\ngrok.exe http 3000"
+    "tunnel": "C:\\ngrok\\ngrok.exe http 3000",
+
+    "// --- BASE DE DATOS ---": "",
+    "db:check": "node scripts/test-db-connection.js",
+    "db:reset": "node scripts/resetear-bd.js",
+    "db:reset:full": "node scripts/resetear-bd.js --total",
+    "db:fill-queue": "node scripts/llenar-cola.js",
+
+    "// --- CHATBOT OPERATIVO ---": "",
+    "bot:trigger-batch": "node scripts/trigger-masivo-chatbot.js",
+    "bot:view-payload": "node scripts/ver-payload-candidato.js",
+
+    "// --- PRUEBAS Y DIAGNÓSTICO ---": "",
+    "test:connection": "node scripts/diagnostico-red.js",
+    "test:bot:direct": "node scripts/test-chatbot-directo.js",
+    "test:bot:http": "node scripts/test-chatbot.js",
+    "test:scenarios": "node scripts/test-webhook-escenarios.js",
+    "test:webhook:simulate": "node scripts/test-webhook-respuesta.js"
   },
   "dependencies": {
     "axios": "^1.7.2",
