@@ -63,6 +63,7 @@ async function main() {
         break;
       }
 
+      console.log()
       console.log(`✅ Se encontraron ${candidatos.length} candidatos para este lote.`);
 
       // 2. Procesar en lote
