@@ -6,7 +6,7 @@ const https = require('https');
 // Ajustar ruta relativa al pool de la base de datos
 const pool = require('../src/db/pool');
 
-const DAYS_ES = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const DAYS_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 function formatChatbotDate(fechaHoraIso) {
   // Ajuste timezone similar a dateHelpers
@@ -100,34 +100,30 @@ async function gatherCandidateData(candidatoId) {
   const eventos_disponibles = rawEvents.map(e => {
     const formatted = formatChatbotDate(e.fecha_hora);
     return {
-      fecha_legible: formatted.full, // "lunes a las 3:00 PM"
+      fecha_legible: formatted.simple, // "Lunes 4:30 PM"
       evento_id: e.id,
       _simple: formatted.simple // helper interno
     };
   });
 
-  // Construir string lista_horarios: "1) lunes 3:00 PM\n2) martes 7:00 PM"
+  // Construir string lista_horarios: "- Lunes 4:30 PM\n- Martes 10:00 AM"
   const lista_horarios = eventos_disponibles
-      .map((e, idx) => `${idx + 1}) ${e._simple}`)
+      .map((e) => `- ${e._simple}`)
       .join('\n');
 
   // Limpiar eventos_disponibles de propiedades internas
   const finalEvents = eventos_disponibles.map(({ _simple, ...rest }) => rest);
 
-  // Mensaje precocinado para facilitar el envío por WhatsApp
-  const mensaje = `Hola ${candidate.nombre}, hemos intentado contactarte varias veces sin éxito. ` +
-                  `Nos gustaría agendar una cita contigo. Por favor responde con el número de tu preferencia:\n\n${lista_horarios}`;
-
   // Payload final
   return {
     candidato_id: candidate.id, // Requerido por el chatbot para saber a quién actualizar luego
-    telefono: candidate.telefono ? candidate.telefono.replace('+', '') : '', // Quitar '+' si existe
+    telefono: candidate.telefono || '', 
     nombre: candidate.nombre,
     motivo: candidate.fase_actual, // Asumimos fase_actual es el motivo (ej. ENTREVISTA)
     ciudad: candidate.ciudad_nombre || 'Desconocida',
     lista_horarios: lista_horarios,
     eventos_disponibles: finalEvents,
-    mensaje: mensaje // Nuevo campo con el texto completo
+    nota_previa: ""
   };
 }
 

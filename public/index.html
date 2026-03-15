@@ -132,13 +132,34 @@
 
             <!-- ================== RED Y CONEXIÓN ================== -->
             <div id="view-ngrok" class="info-card">
-                <div class="card-header"><div class="icon-box bg-slate-light"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--slate-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/></svg></div><div><h3>Iniciar Túnel Ngrok</h3></div></div>
-                <ul class="script-details">
-                    <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Propósito:</strong> Exponer tu servidor local a Internet.</li>
-                    <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Qué hace:</strong> Abre un túnel en el puerto 3000 y genera una URL pública.</li>
-                    <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg> Por qué usarlo:</strong> Porque el chatbot de tu compañera necesita una URL en Internet para enviarte los resultados por Webhook.</li>
-                </ul>
-                <button class="btn btn-primary" onclick="startNgrok()">Ejecutar: npm run tunnel</button>
+                <div class="card-header"><div class="icon-box bg-slate-light"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--slate-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/></svg></div><div><h3>Conexión Pública (Webhook)</h3></div></div>
+
+                <!-- SECCIÓN RENDER (PRODUCCIÓN) -->
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; border: 1px solid #90caf9; margin-bottom: 20px;">
+                    <h4 style="color: #1565c0; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                        SI YA USASTE RENDER (Recomendado)
+                    </h4>
+                    <p style="font-size: 0.9em; color: #333; margin-bottom: 10px;">
+                        <strong>¡No necesitas correr Ngrok en tu PC!</strong> Tu servidor ya está internet.
+                        <br>Dale este link a tu compañera para que el bot te responda aquí:
+                    </p>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" readonly value="https://riwiconnect.onrender.com/api/chatbot/webhook" class="form-control" style="background: #fff; cursor: text;" onclick="this.select()">
+                        <button class="btn btn-outline" onclick="navigator.clipboard.writeText('https://riwiconnect.onrender.com/api/chatbot/webhook'); alert('¡Link copiado! Mándaselo a ella.')">Copiar</button>
+                    </div>
+                </div>
+
+                <hr style="border: 0; border-top: 1px dashed #ccc; margin: 20px 0;">
+
+                <div style="opacity: 0.7;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 0.95em; color: #666;">MODO DESARROLLO LOCAL (Solo si Render falla)</h4>
+                    <ul class="script-details">
+                        <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Propósito:</strong> Exponer tu servidor local a Internet.</li>
+                        <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Qué hace:</strong> Abre un túnel en el puerto 3000.</li>
+                    </ul>
+                    <button class="btn btn-primary" onclick="startNgrok()">Ejecutar: npm run tunnel</button>
+                </div>
             </div>
 
             <div id="view-diag-red" class="info-card">
