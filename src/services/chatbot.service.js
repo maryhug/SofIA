@@ -94,11 +94,11 @@ async function gatherCandidateData(candidatoId) {
     SELECT 
       c.id, c.nombre, c.apellido, c.telefono, c.correo, 
       c.fase_actual, c.franja_actual, 
-      m.nombre as ciudad_nombre,
+      s.nombre as ciudad_nombre,
       eg.codigo as estado_gestion
     FROM public.candidatos c
     LEFT JOIN public.estados_gestion eg ON c.estado_gestion_id = eg.id
-    LEFT JOIN public.municipios m ON c.municipio_id = m.id
+    LEFT JOIN public.sedes s ON c.sede_interes_id = s.id
     WHERE c.id = $1
   `;
   const candidateRes = await pool.query(candidateQuery, [candidatoId]);
@@ -236,10 +236,15 @@ async function forceChatbotTrigger(candidatoId) {
 async function handleBotWebhook(body) {
   // --- INICIO AUDITORIA ---
   // Guardar log crudo apenas entra
+  let logId = null;
   try {
       // Necesitamos una conexión rápida, pero pool retorna un pool. 
       // Si usamos pool.query podemos hacerlo directo.
-      await pool.query('INSERT INTO webhook_logs(payload, recibido_en) VALUES($1, NOW())', [JSON.stringify(body)]);
+      const logRes = await pool.query(
+        'INSERT INTO webhook_logs(payload, recibido_en) VALUES($1, NOW()) RETURNING id',
+        [JSON.stringify(body)]
+      );
+      logId = logRes.rows[0]?.id || null;
   } catch (logErr) {
       console.error('[ChatbotService] Error guardando log de webhook:', logErr.message);
       // No frenamos el proceso principal si falla el log
@@ -296,7 +301,13 @@ async function handleBotWebhook(body) {
              const statusResBackup = await client.query("SELECT id FROM public.estados_gestion WHERE codigo = 'CITA_AGENDADA' LIMIT 1");
              if (statusResBackup.rows.length > 0) statusToSet = statusResBackup.rows[0].id;
         }
-    } 
+    } else if (resultado_agenda === 'NO_INTERESADO') {
+        // Mapear NO_INTERESADO a DESCARTADO
+        const statusRes = await client.query("SELECT id FROM public.estados_gestion WHERE codigo = 'DESCARTADO' LIMIT 1");
+        if (statusRes.rows.length > 0) {
+            statusToSet = statusRes.rows[0].id;
+        }
+    }
     // Aquí se pueden agregar más mapeos (ej. 'NO_INTERESADO' -> 'DADO_DE_BAJA' o similar)
 
     if (statusToSet) {
@@ -334,11 +345,21 @@ async function handleBotWebhook(body) {
     }
 
     await client.query('COMMIT');
+
+    if (logId) {
+        await pool.query('UPDATE webhook_logs SET procesado_exitosamente = TRUE, error_log = NULL WHERE id = $1', [logId]);
+    }
+
     return { success: true, message: 'Datos procesados correctamente' };
 
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('[ChatbotService] Error actualizando DB desde bot:', err);
+
+    if (logId) {
+        await pool.query('UPDATE webhook_logs SET procesado_exitosamente = FALSE, error_log = $1 WHERE id = $2', [err.message, logId]);
+    }
+
     throw err;
   } finally {
     client.release();

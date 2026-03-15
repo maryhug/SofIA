@@ -36,6 +36,7 @@ async function main() {
                 console.log(`\n📅 [${row.fecha_formateada}] - ID: ${row.id}`);
                 console.log(`📦 PAYLOAD:`);
                 console.log(JSON.stringify(row.payload, null, 2));
+                console.log(`✅ PROCESADO: ${row.procesado_exitosamente === null ? 'SIN ESTADO' : row.procesado_exitosamente}`);
                 if (row.error_log) {
                     console.log(`❌ ERROR AL PROCESAR: ${row.error_log}`);
                 }
