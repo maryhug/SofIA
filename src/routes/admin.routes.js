@@ -1,42 +1,55 @@
-// Archivo: src/routes/admin.routes.js
+// src/routes/admin.routes.js
+
 const express = require('express');
 const router = express.Router();
 const { exec } = require('child_process');
 const ngrok = require('ngrok');
 
-// LISTA BLANCA ACTUALIZADA (Sin llenar-cola.js)
-const ALLOWED_SCRIPTS = [
-    'test-db-connection.js',
-    'resetear-bd.js',
-    'trigger-masivo-chatbot.js',
-    'ver-payload-candidato.js',
-    'diagnostico-red.js',
-    'test-chatbot-directo.js',
-    'test-chatbot.js',
-    'test-webhook-escenarios.js',
-    'test-webhook-respuesta.js',
-    'get-candidatos.js',
-    'check-candidate.js',
-    'reset-candidato.js',
-    'invitar-jurado.js', // <-- Agregado para permitir invitaciones desde el panel web
-    'ver-logs-webhook.js',
-    'limpiar-logs-webhook.js',
-    'create-logs-table.js',
-    'setup-logs-db.js'
-];
+// LISTA BLANCA ACTUALIZADA
+const ALLOWED_SCRIPTS = {
+    // DB
+    'create-logs-table.js': 'db',
+    'reset-db.js': 'db',
+    'setup-logs-db.js': 'db',
+
+    // Testing
+    'test-network.js': 'testing',
+    'test-chatbot-direct.js': 'testing',
+    'test-chatbot.js': 'testing',
+    'test-db-connection.js': 'testing',
+    'test-ngrok.js': 'testing',
+    'test-webhook-scenarios.js': 'testing',
+    'test-webhook-response.js': 'testing',
+
+    // Utils
+    'check-candidate.js': 'utils',
+    'get-candidates.js': 'utils',
+    'invite-judge.js': 'utils',
+    'clear-webhook-logs.js': 'utils',
+    'list-events.js': 'utils',
+    'reset-candidate.js': 'utils',
+    'bulk-trigger-chatbot.js': 'utils',
+    'view-webhook-logs.js': 'utils',
+    'view-candidate-payload.js': 'utils'
+};
 
 // Endpoint para ejecutar scripts
 router.post('/run-script', (req, res) => {
     const { scriptName, arg, flag } = req.body;
 
-    if (!ALLOWED_SCRIPTS.includes(scriptName)) {
-        return res.status(403).json({ output: `❌ Error: El script '${scriptName}' no está permitido.` });
+    // Buscamos a qué carpeta pertenece el script
+    const folder = ALLOWED_SCRIPTS[scriptName];
+
+    if (!folder) {
+        return res.status(403).json({ output: `❌ Error: El script '${scriptName}' no está permitido o no existe.` });
     }
 
     let safeArg = arg ? arg.replace(/[;&|`$]/g, '') : '';
     let safeFlag = flag === '--total' ? '--total' : '';
 
-    const cmdParts = ['node', `scripts/${scriptName}`];
+    // Agregamos la subcarpeta dinámicamente en el comando
+    const cmdParts = ['node', `scripts/${folder}/${scriptName}`];
+
     if (safeFlag) cmdParts.push(safeFlag);
     if (safeArg) cmdParts.push(safeArg);
 

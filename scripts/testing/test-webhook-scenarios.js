@@ -1,4 +1,4 @@
-// scripts/test-webhook-escenarios.js
+// scripts/test-webhook-scenarios.js
 'use strict';
 
 /**
@@ -7,7 +7,7 @@
  */
 
 const axios = require('axios');
-const pool = require('../src/db/pool');
+const pool = require('../../src/db/pool');
 require('dotenv').config();
 
 const BASE_URL = `http://localhost:${process.env.PORT || 3000}/api/chatbot/webhook`;

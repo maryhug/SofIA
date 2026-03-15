@@ -1,6 +1,6 @@
 // scripts/list-events.js
 require('dotenv').config();
-const pool = require('../src/db/pool');
+const pool = require('../../src/db/pool');
 
 async function main() {
     try {

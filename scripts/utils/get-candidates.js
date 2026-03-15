@@ -1,6 +1,6 @@
-// Archivo: scripts/get-candidatos.js
+// Archivo: scripts/get-candidates.js
 require('dotenv').config();
-const pool = require('../src/db/pool');
+const pool = require('../../src/db/pool');
 
 async function run() {
     try {

@@ -91,10 +91,12 @@
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
                 Forzar Chatbot Directo
             </a>
+
             <a href="#" class="nav-item" onclick="showView('view-test-http', this)">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                 Prueba HTTP (API Local)
             </a>
+
             <a href="#" class="nav-item" onclick="showView('view-test-scenarios', this)">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h5l2-9 5 18 2-9h6"/></svg>
                 Simular Escenarios
@@ -169,7 +171,7 @@
                     <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Qué hace:</strong> Lee el <code>.env</code> y envía un ping a la URL de tu compañera.</li>
                     <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg> Por qué usarlo:</strong> Si el Trigger Masivo falla, esto te ayuda a saber si el problema es tuyo o si ella apagó su servidor.</li>
                 </ul>
-                <button class="btn btn-primary" onclick="runScript('diagnostico-red.js')">Ejecutar Diagnóstico</button>
+                <button class="btn btn-primary" onclick="runScript('test-network.js')">Ejecutar Diagnóstico</button>
             </div>
 
             <!-- ================== CHATBOT Y FLUJO ================== -->
@@ -180,7 +182,7 @@
                     <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Qué hace:</strong> Busca a los candidatos con 9 o más intentos y les envía el JSON al chatbot.</li>
                     <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg> Por qué usarlo:</strong> Para simular el momento real en que SofIA se rinde de llamar y delega el trabajo al bot de WhatsApp.</li>
                 </ul>
-                <button class="btn btn-primary bg-mint text-dark" onclick="runScript('trigger-masivo-chatbot.js')">Disparar Chatbots</button>
+                <button class="btn btn-primary bg-mint text-dark" onclick="runScript('bulk-trigger-chatbot.js')">Disparar Chatbots</button>
             </div>
 
             <div id="view-bot-payload" class="info-card">
@@ -193,7 +195,7 @@
                 <div class="flex-row">
                     <button class="btn btn-outline" style="flex: 0 0 auto;" onclick="loadUsers()">1. Cargar Usuarios</button>
                     <select id="select-payload" class="form-control"><option value="">2. Selecciona un candidato...</option></select>
-                    <button class="btn btn-primary bg-mint text-dark" style="flex: 0 0 auto;" onclick="runScriptWithSelect('ver-payload-candidato.js', 'select-payload')">3. Ver JSON</button>
+                    <button class="btn btn-primary bg-mint text-dark" style="flex: 0 0 auto;" onclick="runScriptWithSelect('view-candidate-payload.js', 'select-payload')">3. Ver JSON</button>
                 </div>
             </div>
 
@@ -218,7 +220,7 @@
                 <div class="flex-row">
                     <button class="btn btn-outline" style="flex: 0 0 auto;" onclick="loadUsers()">1. Cargar Usuarios</button>
                     <select id="select-reset-cand" class="form-control"><option value="">2. Selecciona a quién preparar...</option></select>
-                    <button class="btn btn-primary" style="flex: 0 0 auto;" onclick="runScriptWithSelect('reset-candidato.js', 'select-reset-cand')">3. Preparar Candidato</button>
+                    <button class="btn btn-primary" style="flex: 0 0 auto;" onclick="runScriptWithSelect('reset-candidate.js', 'select-reset-cand')">3. Preparar Candidato</button>
                 </div>
             </div>
 
@@ -239,7 +241,7 @@
                     <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Qué hace:</strong> Libera llamadas congeladas en estado <code>EN_CURSO</code>.</li>
                     <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg> Por qué usarlo:</strong> Útil si detuviste el servidor bruscamente durante una operación de red.</li>
                 </ul>
-                <button class="btn btn-primary" style="background: #E6CA52; color: #181E4B;" onclick="runScript('resetear-bd.js')">Limpiar Rápidamente</button>
+                <button class="btn btn-primary" style="background: #E6CA52; color: #181E4B;" onclick="runScript('reset-db.js')">Limpiar Rápidamente</button>
             </div>
 
             <div id="view-db-full" class="info-card">
@@ -249,7 +251,7 @@
                     <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Qué hace:</strong> Borra TODO el historial de llamadas, vacía la cola y pone 0 intentos a todos.</li>
                     <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg> Por qué usarlo:</strong> El sistema no interactuará con alguien que ya agotó intentos o ya está en el historial.</li>
                 </ul>
-                <button class="btn btn-danger" onclick="runScript('resetear-bd.js', '', '--total')">⚠️ Ejecutar Borrado Total</button>
+                <button class="btn btn-danger" onclick="runScript('reset-db.js', '', '--total')">⚠️ Ejecutar Borrado Total</button>
             </div>
 
             <!-- ================= NUEVA SECCIÓN DE LOGS ================= -->
@@ -259,7 +261,7 @@
                     <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Propósito:</strong> Espiar qué información exacta te manda el chatbot.</li>
                     <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Qué hace:</strong> Muestra los últimos 10 JSONs recibidos en la tabla <code>webhook_logs</code>.</li>
                 </ul>
-                <button class="btn btn-primary" onclick="runScript('ver-logs-webhook.js')">Ver Últimos 10 Logs</button>
+                <button class="btn btn-primary" onclick="runScript('view-webhook-logs.js')">Ver Últimos 10 Logs</button>
             </div>
 
             <div id="view-logs-limpiar" class="info-card">
@@ -268,7 +270,7 @@
                     <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Propósito:</strong> Borrar los registros antiguos para no llenar tu BD.</li>
                 </ul>
                 <!-- Ajusté el nombre para que busque si lo creaste como un archivo separado, si lo llamaste diferente solo cambia el string -->
-                <button class="btn btn-danger" onclick="runScript('limpiar-logs-webhook.js')">Vaciar Logs</button>
+                <button class="btn btn-danger" onclick="runScript('clear-webhook-logs.js')">Vaciar Logs</button>
             </div>
 
             <div id="view-logs-crear" class="info-card">
@@ -319,7 +321,7 @@
                 <div class="flex-row">
                     <button class="btn btn-outline" style="flex: 0 0 auto;" onclick="loadUsers()">Cargar Usuarios</button>
                     <select id="select-test-direct" class="form-control"><option value="">Selecciona...</option></select>
-                    <button class="btn btn-primary" style="flex: 0 0 auto;" onclick="runScriptWithSelect('test-chatbot-directo.js', 'select-test-direct')">Forzar Envío</button>
+                    <button class="btn btn-primary" style="flex: 0 0 auto;" onclick="runScriptWithSelect('test-chatbot-direct.js', 'select-test-direct')">Forzar Envío</button>
                 </div>
             </div>
 
@@ -340,7 +342,7 @@
                     <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Qué hace:</strong> Finge que los candidatos respondieron Agendado, No interesado, etc.</li>
                     <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg> Por qué usarlo:</strong> Para ver si la BD guarda bien las notas y estados ante casos complejos.</li>
                 </ul>
-                <button class="btn btn-primary" onclick="runScript('test-webhook-escenarios.js')">Simular Escenarios</button>
+                <button class="btn btn-primary" onclick="runScript('test-webhook-scenarios.js')">Simular Escenarios</button>
             </div>
 
             <div id="view-test-webhook" class="info-card">
@@ -350,7 +352,7 @@
                     <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Qué hace:</strong> Simula recibir un JSON idéntico al de tu compañera.</li>
                     <li><strong><svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg> Por qué usarlo:</strong> Para probar que SofIA procesa bien la respuesta sin depender de tu compañera.</li>
                 </ul>
-                <button class="btn btn-primary" onclick="runScript('test-webhook-respuesta.js')">Simular Respuesta</button>
+                <button class="btn btn-primary" onclick="runScript('test-webhook-response.js')">Simular Respuesta</button>
             </div>
 
         </div>

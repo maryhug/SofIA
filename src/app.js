@@ -1,18 +1,20 @@
+// src/app.js
+
 'use strict';
 
 const express = require('express');
-const cors = require('cors'); // <-- Importar CORS
-const chatbotRoutes = require('../chatbot/chatbot.routes');
+const cors = require('cors');
+
+const chatbotRoutes = require('./routes/chatbot.routes');
 const adminRoutes = require('./routes/admin.routes');
-const healthRoutes = require('./routes/health'); // <-- Importar Health check
+const healthRoutes = require('./routes/health');
 const path = require('path');
 
 const app = express();
 
-app.use(cors()); // <-- Habilitar CORS para todas las rutas
+app.use(cors());
 app.use(express.json());
 
-// Logger de peticiones (Opcional, pero útil)
 app.use((req, _res, next) => {
   console.log(`[${req.method}] ${req.originalUrl}`);
   next();

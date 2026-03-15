@@ -1,18 +1,18 @@
-// scripts/ver-payload-candidato.js
+// scripts/view-candidate-payload.js
 'use strict';
 
 console.log('📢 Iniciando script de diagnóstico...');
 
 require('dotenv').config();
-const service = require('../chatbot/chatbot.service');
-const pool = require('../src/db/pool');
+const service = require('../../src/services/chatbot.service');
+const pool = require('../../src/db/pool');
 
 async function main() {
     const candidatoId = process.argv[2];
 
     if (!candidatoId) {
         console.error('❌ Error: Debes pasar un UUID.');
-        console.error('Uso: node scripts/ver-payload-candidato.js <UUID>');
+        console.error('Uso: node scripts/view-candidate-payload.js <UUID>');
         process.exit(1);
     }
 

@@ -1,17 +1,17 @@
 /**
- * scripts/resetear-bd.js
+ * scripts/reset-db.js
  *
  * Reinicia la BD para empezar desde cero.
  *
  * Modos:
- *   node scripts/resetear-bd.js            → limpia sólo lo que está trabado (EN_CURSO)
- *   node scripts/resetear-bd.js --total    → borra TODAS las llamadas y cola (sin importar fecha),
+ *   node scripts/reset-db.js            → limpia sólo lo que está trabado (EN_CURSO)
+ *   node scripts/reset-db.js --total    → borra TODAS las llamadas y cola (sin importar fecha),
  *                                            resetea candidatos a PENDIENTE
  */
 'use strict';
 
 require('dotenv').config();
-const pool = require('../src/db/pool');
+const pool = require('../../src/db/pool');
 
 const TOTAL = process.argv.includes('--total');
 

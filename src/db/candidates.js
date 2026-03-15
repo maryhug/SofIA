@@ -1,6 +1,7 @@
 /**
- * src/db/candidatos.js – Candidatos repository
+ * src/db/candidates.js – Candidatos repository
  */
+
 'use strict';
 
 const pool = require('./pool');

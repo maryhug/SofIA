@@ -1,9 +1,9 @@
-// Archivo: scripts/reset-candidato.js
+// Archivo: scripts/reset-candidate.js
 require('dotenv').config();
-const pool = require('../src/db/pool');
+const pool = require('../../src/db/pool');
 
 async function main() {
-  // Tomamos el UUID del argumento (ej: node scripts/reset-candidato.js 0dd9d...)
+  // Tomamos el UUID del argumento (ej: node scripts/reset-candidate.js 0dd9d...)
   const cid = process.argv[2];
 
   if (!cid) {

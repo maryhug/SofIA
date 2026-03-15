@@ -1,4 +1,4 @@
-// scripts/test-webhook-respuesta.js
+// scripts/test-webhook-response.js
 'use strict';
 
 /**
@@ -6,17 +6,17 @@
  * Envía un payload JSON al endpoint local /api/chatbot/webhook
  * 
  * Uso:
- *   node scripts/test-webhook-respuesta.js [CANDIDATO_UUID] [RESULTADO] [EVENTO_UUID]
+ *   node scripts/test-webhook-response.js [CANDIDATO_UUID] [RESULTADO] [EVENTO_UUID]
  * 
  * Ejemplos:
  *   1. Agendado (con evento):
- *      node scripts/test-webhook-respuesta.js "SU-UUID" "AGENDADO" "UUID-EVENTO"
+ *      node scripts/test-webhook-response.js "SU-UUID" "AGENDADO" "UUID-EVENTO"
  * 
  *   2. No interesado (sin evento):
- *      node scripts/test-webhook-respuesta.js "SU-UUID" "NO_INTERESADO"
+ *      node scripts/test-webhook-response.js "SU-UUID" "NO_INTERESADO"
  * 
  *   3. Solo nota:
- *      node scripts/test-webhook-respuesta.js "SU-UUID" "OTRO" "" "Nota explicativa"
+ *      node scripts/test-webhook-response.js "SU-UUID" "OTRO" "" "Nota explicativa"
  */
 
 const axios = require('axios');

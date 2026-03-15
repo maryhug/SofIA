@@ -1,4 +1,4 @@
-// Archivo: public/app.js
+// public/app.js
 
 const terminal = document.getElementById('terminal');
 const loader = document.getElementById('loader');
@@ -20,7 +20,7 @@ function showView(viewId, element) {
 // Imprimir en consola
 function appendToTerminal(text) {
     const time = new Date().toLocaleTimeString();
-    terminal.innerHTML += `\n[${time}] > ${text}\n`;
+    terminal.textContent += `\n[${time}] > ${text}\n`;
     terminal.scrollTop = terminal.scrollHeight;
     terminal.scrollLeft = 0;
 }
@@ -59,7 +59,7 @@ async function loadUsers() {
         const res = await fetch('/api/admin/run-script', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ scriptName: 'get-candidatos.js' })
+            body: JSON.stringify({ scriptName: 'get-candidates.js' })
         });
         const data = await res.json();
         const match = data.output.match(/___JSON_START___(.*?)___JSON_END___/);
@@ -106,7 +106,7 @@ function enviarInvitacionDoble() {
     const argumentos = `${candidatoUuid} ${eventoId}`;
 
     // Llamamos al motor principal con el script y los argumentos
-    runScript('invitar-jurado.js', argumentos);
+    runScript('invite-judge.js', argumentos);
 }
 
 // Motor principal

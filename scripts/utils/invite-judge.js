@@ -1,5 +1,5 @@
 /**
- * scripts/invitar-jurado.js
+ * scripts/invite-judge.js
  *
  * Busca un jurado/candidato en la BD y envía el payload con la estructura exacta:
  * {
@@ -18,7 +18,7 @@
 require('dotenv').config();
 const axios = require('axios');
 const https = require('https');
-const pool = require('../src/db/pool');
+const pool = require('../../src/db/pool');
 
 const CHATBOT_WEBHOOK_URL = process.env.CHATBOT_WEBHOOK_URL || 'http://localhost:4000/webhook/initiate';
 const EVENTO_JURADOS_ID = 5; // <--- ID DEL EVENTO DE PRESENTACIÓN
@@ -55,7 +55,7 @@ async function main() {
 
     if (!candidatoId) {
         console.error('❌ Error: Debes proporcionar el UUID del jurado/candidato.');
-        console.error('Uso: node scripts/invitar-jurado.js <UUID>');
+        console.error('Uso: node scripts/invite-judge.js <UUID>');
         process.exit(1);
     }
 

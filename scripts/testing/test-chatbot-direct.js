@@ -1,16 +1,16 @@
-// scripts/test-chatbot-directo.js
+// scripts/test-chatbot-direct.js
 'use strict';
 
 require('dotenv').config();
-const { forceChatbotTrigger } = require('../chatbot/chatbot.service');
-const pool = require('../src/db/pool');
+const { forceChatbotTrigger } = require('../../src/services/chatbot.service');
+const pool = require('../../src/db/pool');
 
 async function main() {
   const candidatoId = process.argv[2];
 
   if (!candidatoId) {
     console.error('❌ Error: Debes proporcionar un UUID de candidato.');
-    console.error('Uso: node scripts/test-chatbot-directo.js <UUID>');
+    console.error('Uso: node scripts/test-chatbot-direct.js <UUID>');
     process.exit(1);
   }
 

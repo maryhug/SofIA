@@ -7,21 +7,25 @@
     "start": "node index.js",
     "dev": "node --watch index.js",
     "tunnel": "C:\\ngrok\\ngrok.exe http 3000",
+
     "// --- JURADO Y DEMO ---": "",
-    "bot:invite-jurado": "node scripts/invitar-jurado.js",
+    "bot:invite-jurado": "node scripts/utils/invite-judge.js",
+
     "// --- OPERACIÓN DIARIA ---": "",
-    "bot:trigger": "node scripts/trigger-masivo-chatbot.js",
-    "bot:check": "node scripts/check-candidate.js",
-    "bot:reset": "node scripts/reset-candidato.js",
+    "bot:trigger": "node scripts/utils/bulk-trigger-chatbot.js",
+    "bot:check": "node scripts/utils/check-candidate.js",
+    "bot:reset": "node scripts/utils/reset-candidate.js",
+
     "// --- UTILIDADES ---": "",
-    "db:check": "node scripts/test-db-connection.js",
-    "db:events": "node scripts/list-events.js",
-    "test:ngrok": "node scripts/test-ngrok.js",
-    "test:direct": "node scripts/test-chatbot-directo.js",
+    "db:check": "node scripts/testing/test-db-connection.js",
+    "db:events": "node scripts/utils/list-events.js",
+    "test:ngrok": "node scripts/testing/test-ngrok.js",
+    "test:direct": "node scripts/testing/test-chatbot-direct.js",
+
     "// --- MONITOREO Y LOGS ---": "",
-    "logs:setup": "node scripts/setup-logs-db.js",
-    "logs:view": "node scripts/ver-logs-webhook.js",
-    "logs:clear": "node scripts/limpiar-logs-webhook.js"
+    "logs:setup": "node scripts/db/setup-logs-db.js",
+    "logs:view": "node scripts/utils/view-webhook-logs.js",
+    "logs:clear": "node scripts/utils/clear-webhook-logs.js"
   },
   "dependencies": {
     "axios": "^1.7.2",

@@ -4,6 +4,7 @@
  * All times for scheduling and display use Colombia Standard Time (UTC-5).
  * Colombia does NOT observe daylight saving time, so the offset is always -5.
  */
+
 'use strict';
 
 const COLOMBIA_OFFSET_HOURS = -5;

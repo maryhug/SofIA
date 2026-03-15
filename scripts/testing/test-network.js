@@ -1,4 +1,4 @@
-// scripts/diagnostico-red.js
+// scripts/test-network.js
 /**
  * Script de diagnóstico simple para verificar conectividad
  * Recuperado para compatibilidad con botones de IDE
@@ -6,7 +6,7 @@
 'use strict';
 require('dotenv').config();
 const dns = require('dns');
-const pool = require('../src/db/pool');
+const pool = require('../../src/db/pool');
 
 console.log('\n--- 📡 DIAGNÓSTICO RÁPIDO SOFIA ---');
 

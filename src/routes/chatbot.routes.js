@@ -3,7 +3,7 @@
 
 const express = require('express');
 const router = express.Router();
-const chatbotService = require('./chatbot.service');
+const chatbotService = require('../services/chatbot.service');
 
 /**
  * POST /webhook

@@ -1,5 +1,5 @@
 /**
- * src/db/eventos.js – Eventos repository
+ * src/db/events.js – Eventos repository
  *
  * Covers public.eventos
  */

@@ -3,7 +3,7 @@
 
 require('dotenv').config();
 const axios = require('axios');
-const pool = require('../src/db/pool');
+const pool = require('../../src/db/pool');
 
 async function main() {
   let candidatoId = process.argv[2];
